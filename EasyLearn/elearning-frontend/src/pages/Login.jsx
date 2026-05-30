@@ -29,19 +29,43 @@ export default function Login() {
       });
 
       const data = await response.json();
+      
       if (data.success && data.user) {
+        const ALLOWED_ROLES = ['admin', 'teacher', 'student'];
+        const role = String(data.user.role);
+        
+        if (!ALLOWED_ROLES.includes(role)) {
+          setError('Помилка валідації даних.');
+          return;
+        }
+
+        const emailStr = String(data.user.email);
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!emailRegex.test(emailStr)) {
+          setError('Помилка валідації даних.');
+          return;
+        }
+
+        const id = Number.parseInt(data.user.id, 10);
+        if (Number.isNaN(id)) {
+          setError('Помилка валідації даних.');
+          return;
+        }
+
+        const full_name = String(data.user.full_name).replace(/[^A-Za-zА-Яа-яІіЇїЄєҐґ0-9\s-]/g, '');
+
         const safeUser = {
-          id: Number.parseInt(data.user.id, 10),
-          full_name: encodeURIComponent(data.user.full_name), 
-          email: encodeURIComponent(data.user.email),
-          role: encodeURIComponent(data.user.role)
+          id: id,
+          full_name: full_name,
+          email: emailStr,
+          role: role
         };
         
         localStorage.setItem('user', JSON.stringify(safeUser));
         
-        if (data.user.role === 'admin') {
+        if (safeUser.role === 'admin') {
           navigate('/admin');
-        } else if (data.user.role === 'teacher') {
+        } else if (safeUser.role === 'teacher') {
           navigate('/teacher');
         } else {
           navigate('/dashboard');
