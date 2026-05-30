@@ -29,9 +29,15 @@ export default function Login() {
       });
 
       const data = await response.json();
-
-      if (data.success) {
-        localStorage.setItem('user', JSON.stringify(data.user));
+      if (data.success && data.user) {
+        const safeUser = {
+          id: parseInt(data.user.id, 10),
+          full_name: String(data.user.full_name).replace(/</g, "&lt;"), // Базовий захист від XSS
+          email: String(data.user.email).replace(/</g, "&lt;"),
+          role: String(data.user.role).replace(/</g, "&lt;")
+        };
+        
+        localStorage.setItem('user', JSON.stringify(safeUser));
         
         if (data.user.role === 'admin') {
           navigate('/admin');

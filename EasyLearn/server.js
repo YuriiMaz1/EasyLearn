@@ -10,15 +10,19 @@ const path = require('path');
 const fs = require('fs');
 const { YoutubeTranscript } = require('youtube-transcript');
 const app = express();
-app.use(cors());
-app.use(express.json());
-
+const corsOptions = {
+    origin: 'http://localhost:5173',
+    optionsSuccessStatus: 200
+};
+app.use(cors(corsOptions));
+app.use(express.json({ limit: '1mb' }));
 
 // НАЛАШТУВАННЯ ЗАВАНТАЖЕННЯ ФАЙЛІВ
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir);
 }
+
 app.get('/api/admin/fill-transcripts', async (req, res) => {
     const sqlSelect = "SELECT id, title, video_url FROM lessons WHERE transcript_text IS NULL";
     
@@ -59,11 +63,23 @@ const storage = multer.diskStorage({
         cb(null, Date.now() + path.extname(file.originalname)); 
     }
 });
-const upload = multer({ storage: storage });
+const upload = multer({ 
+    storage: storage,
+    limits: { fileSize: 5 * 1024 * 1024 } // 5 МБ максимум
+});
 
 app.use(helmet({
-    crossOriginResourcePolicy: false, 
-    contentSecurityPolicy: false, 
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "https://www.youtube.com", "https://s.ytimg.com"],
+            frameSrc: ["'self'", "https://www.youtube.com"],
+            connectSrc: ["'self'", "http://localhost:3000"],
+            imgSrc: ["'self'", "data:", "https:"],
+            styleSrc: ["'self'", "'unsafe-inline'"]
+        }
+    },
+    crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
 // 1. ПОДКЛЮЧЕНИЕ К БАЗЕ ДАННЫХ
 
