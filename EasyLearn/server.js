@@ -65,14 +65,6 @@ app.use(helmet({
     crossOriginResourcePolicy: false, 
     contentSecurityPolicy: false, 
 }));
-
-// const limiter = rateLimit({
-//    windowMs: 15 * 60 * 1000, 
-//    max: 2000, 
-//  message: { success: false, error: "Занадто багато запитів. Спробуйте пізніше." }
-// });
-//app.use('/api/', limiter);
-
 // 1. ПОДКЛЮЧЕНИЕ К БАЗЕ ДАННЫХ
 
 const db = mysql.createPool({

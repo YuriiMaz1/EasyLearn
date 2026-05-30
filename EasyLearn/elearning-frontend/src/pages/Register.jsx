@@ -63,15 +63,15 @@ export default function Register() {
       setError('Пароль має містити мінімум 8 символів!');
       return;
     }
-    if (!/(?=.*[A-Z])/.test(pass)) {
+    if (!/[A-Z]/.test(pass)) {
       setError('Пароль має містити хоча б одну велику літеру (англійську)!');
       return;
     }
-    if (!/(?=.*[a-z])/.test(pass)) {
+    if (!/[a-z]/.test(pass)) {
       setError('Пароль має містити хоча б одну малу літеру (англійську)!');
       return;
     }
-    if (!/(?=.*[0-9])/.test(pass)) {
+    if (!/[0-9]/.test(pass)) {
       setError('Пароль має містити хоча б одну цифру!');
       return;
     }
