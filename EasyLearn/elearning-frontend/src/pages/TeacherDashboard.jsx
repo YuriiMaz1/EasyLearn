@@ -60,15 +60,13 @@ export default function TeacherDashboard() {
   // Стейт для Drag and Drop (Перетягування)
   const [draggedIndex, setDraggedIndex] = useState(null);
 
-const fetchMyCourses = () => {
-    if (!user || !user.id) return;
-    
-    const safeUserId = parseInt(user.id, 10);
-    if (isNaN(safeUserId)) return;
+const fetchLessons = (courseId) => {
+    const safeCourseId = Number.parseInt(courseId, 10);
+    if (Number.isNaN(safeCourseId)) return;
 
-    fetch(`http://localhost:3000/api/teacher/${safeUserId}/courses`)
+    fetch(`http://localhost:3000/api/courses/${safeCourseId}/lessons`)
       .then(res => res.json())
-      .then(data => setMyCourses(Array.isArray(data) ? data : []))
+      .then(data => setLessons(Array.isArray(data) ? data : []))
       .catch(err => console.error(err));
   };
 

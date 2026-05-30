@@ -30,11 +30,11 @@ export default function Login() {
 
       const data = await response.json();
       if (data.success && data.user) {
-      const safeUser = {
+        const safeUser = {
           id: Number.parseInt(data.user.id, 10),
-          full_name: String(data.user.full_name).replaceAll("<", "&lt;"), 
-          email: String(data.user.email).replaceAll("<", "&lt;"),
-          role: String(data.user.role).replaceAll("<", "&lt;")
+          full_name: encodeURIComponent(data.user.full_name), 
+          email: encodeURIComponent(data.user.email),
+          role: encodeURIComponent(data.user.role)
         };
         
         localStorage.setItem('user', JSON.stringify(safeUser));
