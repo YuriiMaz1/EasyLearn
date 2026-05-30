@@ -45,9 +45,12 @@ export default function CourseInfo() {
 
   const userId = user ? user.id : null;
 
-  useEffect(() => {
+useEffect(() => {
+    const safeCourseId = parseInt(id, 10);
+    if (isNaN(safeCourseId)) return;
+
     // ПОВЕРНУЛИ НА localhost
-    fetch(`http://localhost:3000/api/courses/${id}`)
+    fetch(`http://localhost:3000/api/courses/${safeCourseId}`)
       .then(res => {
         if (!res.ok) throw new Error('Курс не знайдено');
         return res.json();
@@ -58,29 +61,32 @@ export default function CourseInfo() {
         setError('Помилка завантаження курсу');
       });
 
-    fetch(`http://localhost:3000/api/courses/${id}/lessons`)
+    fetch(`http://localhost:3000/api/courses/${safeCourseId}/lessons`)
       .then(res => res.json())
       .then(data => setLessons(data))
       .catch(err => console.error(err));
 
     if (userId) {
-      fetch(`http://localhost:3000/api/dashboard/${userId}`)
-        .then(res => res.json())
-        .then(enrolledCourses => {
-          const alreadyIn = enrolledCourses.some(c => c.id === parseInt(id));
-          setIsEnrolled(alreadyIn);
-        })
-        .catch(err => console.error(err));
+      const safeUserId = parseInt(userId, 10);
+      if (!isNaN(safeUserId)) {
+        fetch(`http://localhost:3000/api/dashboard/${safeUserId}`)
+          .then(res => res.json())
+          .then(enrolledCourses => {
+            const alreadyIn = enrolledCourses.some(c => c.id === safeCourseId);
+            setIsEnrolled(alreadyIn);
+          })
+          .catch(err => console.error(err));
 
-      fetch(`http://localhost:3000/api/progress/${id}/${userId}`)
-        .then(res => res.json())
-        .then(data => setCompletedLessonIds(data))
-        .catch(err => console.error(err));
+        fetch(`http://localhost:3000/api/progress/${safeCourseId}/${safeUserId}`)
+          .then(res => res.json())
+          .then(data => setCompletedLessonIds(data))
+          .catch(err => console.error(err));
 
-      fetch(`http://localhost:3000/api/wishlist/${userId}`)
-        .then(res => res.json())
-        .then(data => setIsFavorite(data.some(c => c.id === parseInt(id))))
-        .catch(err => console.error(err));
+        fetch(`http://localhost:3000/api/wishlist/${safeUserId}`)
+          .then(res => res.json())
+          .then(data => setIsFavorite(data.some(c => c.id === safeCourseId)))
+          .catch(err => console.error(err));
+      }
     }
   }, [id, userId]);
 

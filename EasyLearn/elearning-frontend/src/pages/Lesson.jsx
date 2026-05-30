@@ -69,6 +69,7 @@ export default function Lesson() {
     if (!window.YT) {
       const tag = document.createElement('script');
       tag.src = "https://www.youtube.com/iframe_api";
+      tag.crossOrigin = "anonymous";
       const firstScriptTag = document.getElementsByTagName('script')[0];
       if (firstScriptTag && firstScriptTag.parentNode) {
         firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
@@ -79,9 +80,14 @@ export default function Lesson() {
   }, []);
 
   useEffect(() => {
-    if (!user) { navigate('/login'); return; }
+    if (!user || !user.id) { navigate('/login'); return; }
 
-    fetch(`http://localhost:3000/api/courses/${courseId}`)
+    const safeCourseId = parseInt(courseId, 10);
+    const safeUserId = parseInt(user.id, 10);
+
+    if (isNaN(safeCourseId) || isNaN(safeUserId)) return;
+
+    fetch(`http://localhost:3000/api/courses/${safeCourseId}`)
       .then(res => res.json())
       .then(data => {
         setCourseTitle(data.title);
@@ -89,7 +95,7 @@ export default function Lesson() {
         courseAuthorIdRef.current = data.teacher_id; 
       });
 
-    fetch(`http://localhost:3000/api/courses/${courseId}/lessons`)
+    fetch(`http://localhost:3000/api/courses/${safeCourseId}/lessons`)
       .then(res => res.json())
       .then(data => {
         const parsedData = data.map(l => ({ ...l, quiz_data: l.quiz_data ? JSON.parse(l.quiz_data) : [] }));
@@ -97,7 +103,7 @@ export default function Lesson() {
         setCurrentLesson(prev => prev || (parsedData.length > 0 ? parsedData[0] : null)); 
       });
 
-    fetch(`http://localhost:3000/api/progress/${courseId}/${user.id}`)
+    fetch(`http://localhost:3000/api/progress/${safeCourseId}/${safeUserId}`)
       .then(res => res.json())
       .then(data => setCompletedLessonIds(data));
 

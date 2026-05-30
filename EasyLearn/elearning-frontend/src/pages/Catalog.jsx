@@ -30,7 +30,7 @@ export default function Catalog() {
   const savedUser = localStorage.getItem('user');
   const user = savedUser ? JSON.parse(savedUser) : null;
 
-  useEffect(() => {
+useEffect(() => {
     setIsLoading(true); 
     fetch('http://localhost:3000/api/courses')
       .then(res => {
@@ -46,14 +46,16 @@ export default function Catalog() {
         setIsLoading(false);
       });
 
-    if (user) {
-      fetch(`http://localhost:3000/api/wishlist/${user.id}`)
-        .then(res => res.json())
-        .then(data => setWishlist(data.map(c => c.id)))
-        .catch(err => console.error(err));
+    if (user && user.id) {
+      const safeUserId = parseInt(user.id, 10);
+      if (!isNaN(safeUserId)) {
+        fetch(`http://localhost:3000/api/wishlist/${safeUserId}`)
+          .then(res => res.json())
+          .then(data => setWishlist(data.map(c => c.id)))
+          .catch(err => console.error(err));
+      }
     }
   }, [user?.id]);
-
   const handleCategoryChange = (category) => {
     setSelectedCategories(prev => 
       prev.includes(category) ? prev.filter(c => c !== category) : [...prev, category]

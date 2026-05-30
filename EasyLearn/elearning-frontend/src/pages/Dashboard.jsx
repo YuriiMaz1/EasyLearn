@@ -14,7 +14,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [enrolledCourses, setEnrolledCourses] = useState([]);
   const [recommendedCourses, setRecommendedCourses] = useState([]); 
-  const [wishlistCourses, setWishlistCourses] = useState([]); // ДОДАНО: Стейт для обраного
+  const [wishlistCourses, setWishlistCourses] = useState([]);
   
   const savedUser = localStorage.getItem('user');
   const user = savedUser ? JSON.parse(savedUser) : null;
@@ -23,20 +23,20 @@ export default function Dashboard() {
   const fetchDashboardData = () => {
     if (!userId) return;
 
-    // Завантаження активних курсів
-    fetch(`http://localhost:3000/api/dashboard/${userId}`)
+    const safeUserId = parseInt(userId, 10);
+    if (isNaN(safeUserId)) return;
+
+    fetch(`http://localhost:3000/api/dashboard/${safeUserId}`)
       .then(res => res.json())
       .then(data => setEnrolledCourses(Array.isArray(data) ? data : []))
       .catch(error => console.error("Помилка:", error));
 
-    // Завантаження рекомендацій
-    fetch(`http://localhost:3000/api/recommendations/${userId}`)
+    fetch(`http://localhost:3000/api/recommendations/${safeUserId}`)
       .then(res => res.json())
       .then(data => setRecommendedCourses(Array.isArray(data) ? data : []))
       .catch(error => console.error("Помилка рекомендацій:", error));
 
-    // ДОДАНО: Завантаження обраного (Wishlist)
-    fetch(`http://localhost:3000/api/wishlist/${userId}`)
+    fetch(`http://localhost:3000/api/wishlist/${safeUserId}`)
       .then(res => res.json())
       .then(data => setWishlistCourses(Array.isArray(data) ? data : []))
       .catch(error => console.error("Помилка wishlist:", error));
@@ -50,7 +50,6 @@ export default function Dashboard() {
     fetchDashboardData();
   }, [userId, navigate]); 
 
-  // Функція для видалення курсу з обраного прямо з дашборду
   const handleRemoveFromWishlist = async (courseId) => {
     try {
       const res = await fetch('http://localhost:3000/api/wishlist/toggle', {
@@ -111,7 +110,6 @@ export default function Dashboard() {
         </Box>
       </Paper>
 
-      {/* АКТИВНІ КУРСИ */}
       <Typography variant="h5" sx={{ fontWeight: 800, mb: 3, color: 'text.primary' }}>Моє навчання</Typography>
       {activeCourses.length > 0 ? (
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' }, gap: 3, mb: 6 }}>
@@ -124,7 +122,6 @@ export default function Dashboard() {
         </Paper>
       )}
 
-      {/* ЗАВЕРШЕНІ КУРСИ */}
       {completedCourses.length > 0 && (
         <>
           <Divider sx={{ mb: 4 }} />
@@ -135,7 +132,6 @@ export default function Dashboard() {
         </>
       )}
 
-      {/* ДОДАНО: ОБРАНІ КУРСИ (WISHLIST) */}
       {wishlistCourses.length > 0 && (
         <Box sx={{ mb: 8 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
@@ -147,7 +143,6 @@ export default function Dashboard() {
               <Card key={course.id} sx={{ height: '100%', display: 'flex', flexDirection: 'column', borderRadius: '12px', border: '1px solid', borderColor: 'divider', backgroundColor: 'background.paper', boxShadow: 'none', position: 'relative' }}>
                 <Box sx={{ width: '100%', height: 160, backgroundImage: `url(${course.image_url})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
                 
-                {/* Кнопка видалення з обраного */}
                 <IconButton 
                   onClick={() => handleRemoveFromWishlist(course.id)} 
                   sx={{ position: 'absolute', top: 8, right: 8, backgroundColor: 'rgba(255,255,255,0.8)', '&:hover': { backgroundColor: '#ffebee' } }}
@@ -177,7 +172,6 @@ export default function Dashboard() {
         </Box>
       )}
 
-      {/* SMART РЕКОМЕНДАЦІЇ */}
       {recommendedCourses.length > 0 && (
         <Box sx={{ p: 4, backgroundColor: 'action.hover', borderRadius: '16px', border: '1px solid', borderColor: 'divider', mb: 8 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
