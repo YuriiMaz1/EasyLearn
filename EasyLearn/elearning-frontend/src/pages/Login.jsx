@@ -30,11 +30,11 @@ export default function Login() {
 
       const data = await response.json();
       if (data.success && data.user) {
-        const safeUser = {
-          id: parseInt(data.user.id, 10),
-          full_name: String(data.user.full_name).replace(/</g, "&lt;"), // Базовий захист від XSS
-          email: String(data.user.email).replace(/</g, "&lt;"),
-          role: String(data.user.role).replace(/</g, "&lt;")
+      const safeUser = {
+          id: Number.parseInt(data.user.id, 10),
+          full_name: String(data.user.full_name).replaceAll("<", "&lt;"), 
+          email: String(data.user.email).replaceAll("<", "&lt;"),
+          role: String(data.user.role).replaceAll("<", "&lt;")
         };
         
         localStorage.setItem('user', JSON.stringify(safeUser));

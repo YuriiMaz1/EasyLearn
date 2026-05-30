@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, Rating, TextField, Button, Paper, Avatar, Divider, Alert } from '@mui/material';
-
+import PropTypes from 'prop-types';
+ReviewsSection.propTypes = {
+  courseId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+  userId: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
+};
 export default function ReviewsSection({ courseId, userId }) {
   const [reviews, setReviews] = useState([]);
   const [rating, setRating] = useState(5);

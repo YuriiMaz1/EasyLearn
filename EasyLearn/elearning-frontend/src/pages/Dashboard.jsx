@@ -23,8 +23,8 @@ export default function Dashboard() {
   const fetchDashboardData = () => {
     if (!userId) return;
 
-    const safeUserId = parseInt(userId, 10);
-    if (isNaN(safeUserId)) return;
+  const safeUserId = Number.parseInt(userId, 10);
+  if (Number.isNaN(safeUserId)) return;
 
     fetch(`http://localhost:3000/api/dashboard/${safeUserId}`)
       .then(res => res.json())
