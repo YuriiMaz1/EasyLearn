@@ -56,25 +56,27 @@ export default function TeacherDashboard() {
   
   const [quizCount, setQuizCount] = useState(3);
   const [isMultipleChoice, setIsMultipleChoice] = useState(false);
-
-  // Стейт для Drag and Drop (Перетягування)
   const [draggedIndex, setDraggedIndex] = useState(null);
 
-const fetchLessons = (courseId) => {
+const fetchMyCourses = () => {
+    if (!user || !user.id) return;
+    
+    const safeUserId = Number.parseInt(user.id, 10);
+    if (Number.isNaN(safeUserId)) return;
+
+    fetch(`http://localhost:3000/api/teacher/${safeUserId}/courses`)
+      .then(res => res.json())
+      .then(data => setMyCourses(Array.isArray(data) ? data : []))
+      .catch(err => console.error(err));
+  };
+
+  const fetchLessons = (courseId) => {
     const safeCourseId = Number.parseInt(courseId, 10);
     if (Number.isNaN(safeCourseId)) return;
 
     fetch(`http://localhost:3000/api/courses/${safeCourseId}/lessons`)
       .then(res => res.json())
-      .then(data => setLessons(Array.isArray(data) ? data : []))
-      .catch(err => console.error(err));
-  };
-
-  const fetchLessons = (courseId) => {
-    fetch(`http://localhost:3000/api/courses/${courseId}/lessons`)
-      .then(res => res.json())
       .then(data => {
-        // Обов'язково сортуємо по order_number
         const sorted = (Array.isArray(data) ? data : []).sort((a, b) => a.order_number - b.order_number);
         setLessons(sorted);
       })
