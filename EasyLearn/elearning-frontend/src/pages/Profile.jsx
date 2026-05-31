@@ -187,7 +187,6 @@ export default function Profile() {
                   <TextField fullWidth label="Електронна пошта" name="email" type="email" value={formData.email} onChange={handleChange} required />
                 </Grid>
 
-                {/* ДОДАНО: Поле для біографії (Тільки для викладачів) */}
                 {user.role === 'teacher' && (
                   <Grid item xs={12}>
                     <TextField 

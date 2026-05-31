@@ -19,10 +19,10 @@ import { ColorModeContext } from '../App';
 
 const SearchContainer = styled('div')(({ theme }) => ({
   position: 'relative', 
-  marginRight: theme.spacing(2), 
-  marginLeft: 0, 
+  marginRight: theme.spacing(1), 
+  marginLeft: theme.spacing(1), 
   width: '100%', 
-  [theme.breakpoints.up('sm')]: { marginLeft: theme.spacing(3), width: 'auto' },
+  [theme.breakpoints.up('sm')]: { width: 'auto' },
 }));
 
 const Search = styled('div')(({ theme }) => ({
@@ -47,6 +47,7 @@ const SearchIconWrapper = styled('div')(({ theme }) => ({
   justifyContent: 'center',
 }));
 
+// Оптимизирована ширина поиска, чтобы спасти место
 const StyledInputBase = styled(InputBase)(({ theme }) => ({
   color: 'inherit', 
   '& .MuiInputBase-input': { 
@@ -54,7 +55,14 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
     paddingLeft: `calc(1em + ${theme.spacing(4)})`, 
     transition: theme.transitions.create('width'), 
     width: '100%', 
-    [theme.breakpoints.up('md')]: { width: '35ch' }, 
+    [theme.breakpoints.up('md')]: { 
+      width: '12ch', 
+      '&:focus': { width: '20ch' } // Расширяется при клике
+    }, 
+    [theme.breakpoints.up('lg')]: { 
+      width: '20ch', 
+      '&:focus': { width: '28ch' }
+    }, 
   },
 }));
 
@@ -78,8 +86,8 @@ export default function Header() {
 
   useEffect(() => {
     if (user && user.id) {
-    const safeUserId = parseInt(user.id, 10);
-    if (!isNaN(safeUserId)) {
+    const safeUserId = Number.parseInt(user.id, 10);
+    if (!Number.isNaN(safeUserId)) {
         fetch(`http://localhost:3000/api/notifications/${safeUserId}`)
           .then(res => res.json())
           .then(data => setNotifications(Array.isArray(data) ? data : []))
@@ -90,7 +98,7 @@ export default function Header() {
 
   useEffect(() => {
     if (searchQuery.trim() === '') {
-      setSearchResults([]); // <--- ВИПРАВЛЕНО ОСЬ ТУТ
+      setSearchResults([]); 
       setIsSearching(false);
       return;
     }
@@ -147,20 +155,20 @@ export default function Header() {
   return (
     <AppBar position="sticky" elevation={0} sx={{ backgroundColor: 'background.paper', color: 'text.primary', borderBottom: '1px solid', borderColor: 'divider', zIndex: 1100 }}>
       <Container maxWidth="lg">
-        <Toolbar disableGutters sx={{ height: '70px' }}>
+        <Toolbar disableGutters sx={{ height: '70px', flexWrap: 'nowrap' }}>
           
-          <IconButton color="inherit" edge="start" onClick={handleMobileToggle} sx={{ mr: 1, display: { md: 'none' } }}>
+          <IconButton color="inherit" edge="start" onClick={handleMobileToggle} sx={{ mr: 1, display: { md: 'none' }, flexShrink: 0 }}>
             <MenuIcon />
           </IconButton>
 
-          <SchoolIcon sx={{ display: { xs: 'none', sm: 'flex' }, mr: 1, color: 'primary.main' }} />
-          <Typography variant="h6" component={Link} to="/" sx={{ mr: { xs: 2, md: 4 }, display: 'flex', fontFamily: '"Google Sans", "Roboto", sans-serif', fontWeight: 700, fontSize: { xs: '1.2rem', sm: '1.4rem' }, color: 'primary.main', textDecoration: 'none' }}>
+          <SchoolIcon sx={{ display: { xs: 'none', sm: 'flex' }, mr: 1, color: 'primary.main', flexShrink: 0 }} />
+          <Typography variant="h6" component={Link} to="/" sx={{ mr: { xs: 2, md: 3 }, display: 'flex', fontFamily: '"Google Sans", "Roboto", sans-serif', fontWeight: 700, fontSize: { xs: '1.2rem', sm: '1.4rem' }, color: 'primary.main', textDecoration: 'none', flexShrink: 0 }}>
             EasyLearn
           </Typography>
           
           {/* ДЕСКТОПНЕ МЕНЮ */}
-          <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' }, alignItems: 'center' }}>
-            <Button component={Link} to="/catalog" sx={{ my: 2, mx: 1, color: 'text.primary', textTransform: 'none', fontWeight: 500 }}>Каталог</Button>
+          <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: { md: 0.5, lg: 1.5 }, overflow: 'hidden' }}>
+            <Button component={Link} to="/catalog" sx={{ color: 'text.primary', textTransform: 'none', fontWeight: 500, minWidth: 'auto' }}>Каталог</Button>
             
             <Tooltip title="Скласти персональний план навчання з ШІ">
               <Button 
@@ -175,8 +183,7 @@ export default function Header() {
                   textTransform: 'none',
                   borderRadius: '20px',
                   boxShadow: '0 3px 15px rgba(233, 30, 99, 0.4)',
-                  mx: 1,
-                  my: 2,
+                  whiteSpace: 'nowrap',
                   transition: 'all 0.3s ease',
                   '&:hover': {
                     transform: 'translateY(-2px)',
@@ -188,7 +195,6 @@ export default function Header() {
               </Button>
             </Tooltip>
 
-            {/* НОВА КНОПКА: ПВП-АРЕНА */}
             {user && (
               <Button 
                 component={Link} 
@@ -201,8 +207,7 @@ export default function Header() {
                   textTransform: 'none',
                   borderRadius: '20px',
                   boxShadow: '0 3px 10px rgba(156, 39, 176, 0.3)',
-                  mx: 1,
-                  my: 2,
+                  whiteSpace: 'nowrap',
                   transition: 'all 0.2s',
                   '&:hover': { transform: 'scale(1.05)' }
                 }}
@@ -211,16 +216,10 @@ export default function Header() {
               </Button>
             )}
 
-            {user && <Button component={Link} to="/dashboard" sx={{ my: 2, mx: 1, color: 'text.primary', textTransform: 'none', fontWeight: 500 }}>Мої Курси</Button>}
+            {user && <Button component={Link} to="/dashboard" sx={{ color: 'text.primary', textTransform: 'none', fontWeight: 500, whiteSpace: 'nowrap', minWidth: 'auto' }}>Мої Курси</Button>}
             
             {user && (user.role === 'teacher' || user.role === 'admin') && (
-              <Button component={Link} to="/teacher" sx={{ my: 2, mx: 1, color: 'primary.main', textTransform: 'none', fontWeight: 600 }}>Створити курс</Button>
-            )}
-            
-            {user && user.role === 'admin' && (
-              <Button component={Link} to="/admin" variant="contained" color="error" sx={{ my: 2, mx: 1, textTransform: 'none', fontWeight: 700, borderRadius: '8px' }}>
-                Адмін-панель
-              </Button>
+              <Button component={Link} to="/teacher" sx={{ color: 'primary.main', textTransform: 'none', fontWeight: 600, whiteSpace: 'nowrap', minWidth: 'auto' }}>Створити курс</Button>
             )}
           </Box>
 
@@ -237,7 +236,7 @@ export default function Header() {
             </Search>
 
             {searchQuery.trim() !== '' && (
-              <Paper elevation={4} sx={{ position: 'absolute', top: '120%', left: 0, right: 0, borderRadius: '12px', overflow: 'hidden', zIndex: 1200, backgroundColor: 'background.paper' }}>
+              <Paper elevation={4} sx={{ position: 'absolute', top: '120%', left: 0, right: 0, borderRadius: '12px', overflow: 'hidden', zIndex: 1200, backgroundColor: 'background.paper', minWidth: '250px' }}>
                 {searchResults.length > 0 ? (
                   <List disablePadding>
                     {searchResults.map((course) => (
@@ -267,108 +266,110 @@ export default function Header() {
             )}
           </SearchContainer>
 
-          <IconButton sx={{ ml: 1 }} onClick={colorMode.toggleColorMode} color="inherit">
-            {theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
-          </IconButton>
+          {/* ПРАВИЙ БЛОК: НІКОЛИ НЕ СТИСКАЄТЬСЯ */}
+          <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+            <IconButton sx={{ ml: { xs: 0, sm: 1 } }} onClick={colorMode.toggleColorMode} color="inherit">
+              {theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
+            </IconButton>
 
-          {user ? (
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              
-              <IconButton color="inherit" onClick={handleNotifOpen} sx={{ ml: 0.5 }}>
-                <Badge badgeContent={unreadNotifCount} color="error">
-                  <NotificationsIcon />
-                </Badge>
-              </IconButton>
+            {user ? (
+              <>
+                <IconButton color="inherit" onClick={handleNotifOpen} sx={{ ml: 0.5 }}>
+                  <Badge badgeContent={unreadNotifCount} color="error">
+                    <NotificationsIcon />
+                  </Badge>
+                </IconButton>
 
-              <Menu
-                anchorEl={notifAnchorEl}
-                open={Boolean(notifAnchorEl)}
-                onClose={handleNotifClose}
-                PaperProps={{
-                  elevation: 4,
-                  sx: { mt: 1.5, width: 320, maxHeight: 400, borderRadius: '12px', border: '1px solid', borderColor: 'divider', backgroundColor: 'background.paper' }
-                }}
-              >
-                <Box sx={{ px: 2, py: 1.5, borderBottom: '1px solid', borderColor: 'divider' }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary' }}>Сповіщення</Typography>
-                </Box>
-                {notifications.length > 0 ? (
-                  <List disablePadding>
-                    {notifications.map(n => (
-                      <React.Fragment key={n.id}>
-                        <ListItem 
-                          button
-                          onClick={() => { 
-                            if(n.link) {
-                              navigate(n.link);
-                              handleNotifClose();
-                            }
-                          }}
-                          sx={{ 
-                            py: 1.5, 
-                            backgroundColor: n.is_read ? 'transparent' : 'action.hover',
-                            transition: 'background-color 0.3s',
-                            cursor: n.link ? 'pointer' : 'default'
-                          }}
-                        >
-                          <ListItemText 
-                            primary={n.message} 
-                            secondary={new Date(n.created_at).toLocaleDateString('uk-UA', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                            primaryTypographyProps={{ variant: 'body2', fontWeight: n.is_read ? 500 : 700, color: 'text.primary' }}
-                            secondaryTypographyProps={{ variant: 'caption', color: 'text.secondary' }}
-                          />
-                        </ListItem>
-                        <Divider />
-                      </React.Fragment>
-                    ))}
-                  </List>
-                ) : (
-                  <Box sx={{ p: 3, textAlign: 'center' }}>
-                    <Typography variant="body2" color="text.secondary">Немає нових сповіщень</Typography>
+                <Menu
+                  anchorEl={notifAnchorEl}
+                  open={Boolean(notifAnchorEl)}
+                  onClose={handleNotifClose}
+                  PaperProps={{
+                    elevation: 4,
+                    sx: { mt: 1.5, width: 320, maxHeight: 400, borderRadius: '12px', border: '1px solid', borderColor: 'divider', backgroundColor: 'background.paper' }
+                  }}
+                >
+                  <Box sx={{ px: 2, py: 1.5, borderBottom: '1px solid', borderColor: 'divider' }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary' }}>Сповіщення</Typography>
                   </Box>
-                )}
-              </Menu>
+                  {notifications.length > 0 ? (
+                    <List disablePadding>
+                      {notifications.map(n => (
+                        <React.Fragment key={n.id}>
+                          <ListItem 
+                            button
+                            onClick={() => { 
+                              if(n.link) {
+                                navigate(n.link);
+                                handleNotifClose();
+                              }
+                            }}
+                            sx={{ 
+                              py: 1.5, 
+                              backgroundColor: n.is_read ? 'transparent' : 'action.hover',
+                              transition: 'background-color 0.3s',
+                              cursor: n.link ? 'pointer' : 'default'
+                            }}
+                          >
+                            <ListItemText 
+                              primary={n.message} 
+                              secondary={new Date(n.created_at).toLocaleDateString('uk-UA', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                              primaryTypographyProps={{ variant: 'body2', fontWeight: n.is_read ? 500 : 700, color: 'text.primary' }}
+                              secondaryTypographyProps={{ variant: 'caption', color: 'text.secondary' }}
+                            />
+                          </ListItem>
+                          <Divider />
+                        </React.Fragment>
+                      ))}
+                    </List>
+                  ) : (
+                    <Box sx={{ p: 3, textAlign: 'center' }}>
+                      <Typography variant="body2" color="text.secondary">Немає нових сповіщень</Typography>
+                    </Box>
+                  )}
+                </Menu>
 
-              <IconButton onClick={handleMenuOpen} sx={{ p: 0, ml: 1.5 }}>
-                <Avatar sx={{ width: 40, height: 40, bgcolor: 'primary.main', fontSize: '1.2rem', fontWeight: 700, border: `2px solid`, borderColor: 'divider' }}>
-                  {user.full_name.charAt(0)}
-                </Avatar>
-              </IconButton>
-              
-              <Menu
-                anchorEl={anchorEl}
-                open={Boolean(anchorEl)}
-                onClose={handleMenuClose}
-                PaperProps={{
-                  elevation: 4,
-                  sx: { mt: 1.5, minWidth: 200, borderRadius: '12px', border: '1px solid', borderColor: 'divider', backgroundColor: 'background.paper' }
-                }}
-              >
-                <Box sx={{ px: 2, py: 1.5, borderBottom: '1px solid', borderColor: 'divider', mb: 1 }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.2, color: 'text.primary' }}>{user.full_name}</Typography>
-                  <Typography variant="body2" color="text.secondary">{user.email}</Typography>
-                  {user.role === 'admin' && <Typography variant="caption" sx={{ color: 'error.main', fontWeight: 700 }}>Адміністратор</Typography>}
-                </Box>
+                <IconButton onClick={handleMenuOpen} sx={{ p: 0, ml: 1.5 }}>
+                  <Avatar sx={{ width: 40, height: 40, bgcolor: 'primary.main', fontSize: '1.2rem', fontWeight: 700, border: `2px solid`, borderColor: 'divider' }}>
+                    {user.full_name.charAt(0)}
+                  </Avatar>
+                </IconButton>
                 
-                <MenuItem component={Link} to="/profile" onClick={handleMenuClose} sx={{ py: 1.5, fontWeight: 500, color: 'text.primary' }}>Особистий кабінет</MenuItem>
-                <MenuItem component={Link} to="/dashboard" onClick={handleMenuClose} sx={{ py: 1.5, fontWeight: 500, color: 'text.primary' }}>Мої курси</MenuItem>
+                <Menu
+                  anchorEl={anchorEl}
+                  open={Boolean(anchorEl)}
+                  onClose={handleMenuClose}
+                  PaperProps={{
+                    elevation: 4,
+                    sx: { mt: 1.5, minWidth: 200, borderRadius: '12px', border: '1px solid', borderColor: 'divider', backgroundColor: 'background.paper' }
+                  }}
+                >
+                  <Box sx={{ px: 2, py: 1.5, borderBottom: '1px solid', borderColor: 'divider', mb: 1 }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.2, color: 'text.primary' }}>{user.full_name}</Typography>
+                    <Typography variant="body2" color="text.secondary">{user.email}</Typography>
+                    {user.role === 'admin' && <Typography variant="caption" sx={{ color: 'error.main', fontWeight: 700 }}>Адміністратор</Typography>}
+                  </Box>
+                  
+                  <MenuItem component={Link} to="/profile" onClick={handleMenuClose} sx={{ py: 1.5, fontWeight: 500, color: 'text.primary' }}>Особистий кабінет</MenuItem>
+                  <MenuItem component={Link} to="/dashboard" onClick={handleMenuClose} sx={{ py: 1.5, fontWeight: 500, color: 'text.primary' }}>Мої курси</MenuItem>
 
-                {user.role === 'admin' && (
-                  <MenuItem component={Link} to="/admin" onClick={handleMenuClose} sx={{ py: 1.5, fontWeight: 700, color: 'error.main' }}>
-                    Панель адміністратора
+                  {user.role === 'admin' && (
+                    <MenuItem component={Link} to="/admin" onClick={handleMenuClose} sx={{ py: 1.5, fontWeight: 700, color: 'error.main' }}>
+                      Панель адміністратора
+                    </MenuItem>
+                  )}
+                  
+                  <Divider sx={{ my: 1 }} />
+                  
+                  <MenuItem onClick={() => { handleMenuClose(); handleLogout(); }} sx={{ py: 1.5, color: 'error.main', fontWeight: 600 }}>
+                    Вийти з акаунта
                   </MenuItem>
-                )}
-                
-                <Divider sx={{ my: 1 }} />
-                
-                <MenuItem onClick={() => { handleMenuClose(); handleLogout(); }} sx={{ py: 1.5, color: 'error.main', fontWeight: 600 }}>
-                  Вийти з акаунта
-                </MenuItem>
-              </Menu>
-            </Box>
-          ) : (
-            <Button component={Link} to="/login" variant="outlined" color="primary" sx={{ ml: 1, textTransform: 'none', borderRadius: '20px', fontWeight: 600, px: 3 }}>Увійти</Button>
-          )}
+                </Menu>
+              </>
+            ) : (
+              <Button component={Link} to="/login" variant="outlined" color="primary" sx={{ ml: 1, textTransform: 'none', borderRadius: '20px', fontWeight: 600, px: 3 }}>Увійти</Button>
+            )}
+          </Box>
 
         </Toolbar>
       </Container>

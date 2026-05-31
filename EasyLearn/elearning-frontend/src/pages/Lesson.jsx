@@ -65,11 +65,12 @@ export default function Lesson() {
     return savedUser ? JSON.parse(savedUser) : null;
   }, []);
 
+  // 1. ВИПРАВЛЕННЯ YOUTUBE API
   useEffect(() => {
     if (!window.YT) {
       const tag = document.createElement('script');
       tag.src = "https://www.youtube.com/iframe_api";
-      tag.crossOrigin = "anonymous";
+      // ВИДАЛЕНО: tag.crossOrigin = "anonymous"; -> YouTube блокує це!
       const firstScriptTag = document.getElementsByTagName('script')[0];
       if (firstScriptTag && firstScriptTag.parentNode) {
         firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
@@ -131,6 +132,7 @@ export default function Lesson() {
     }
   }, [currentLesson?.id]); 
 
+  // 2. ІНІЦІАЛІЗАЦІЯ ПЛЕЄРА
   useEffect(() => {
     if (!currentLesson) return;
 
@@ -179,7 +181,6 @@ export default function Lesson() {
 
                     const isPrivileged = user?.role === 'admin' || (user?.role === 'teacher' && user?.id === courseAuthorIdRef.current);
 
-                    // Логіка анти-скіпу працює надійно і без фізичного щита
                     if (!isPrivileged && currentTime > maxTimeReached.current + 3) {
                       playerRef.current.seekTo(maxTimeReached.current, true);
                       setCheatWarning(true); 
@@ -404,15 +405,10 @@ export default function Lesson() {
                 <>
                   <Box key={currentLesson.id} sx={{ width: '100%', aspectRatio: '16/9', maxHeight: { xs: '300px', sm: '450px', md: '550px' }, backgroundColor: '#000', position: 'relative', display: 'flex', justifyContent: 'center', overflow: 'hidden' }}>
                     
-                    {/* Контейнер плеєра */}
                     <div ref={videoContainerRef} style={{ width: '100%', height: '100%', maxWidth: '1200px' }} />
 
-                    {/* РОЗУМНИЙ ЩИТ 1: Закриває верхню частину (назву відео та кнопки "Поділитися"). Клік по ним перекидає в додаток YouTube */}
                     <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, height: '70px', zIndex: 50, backgroundColor: 'transparent' }} />
-
-                    {/* РОЗУМНИЙ ЩИТ 2: Закриває правий нижній кут (логотип YouTube). Клік по ньому теж перекидає в додаток */}
                     <Box sx={{ position: 'absolute', bottom: 0, right: 0, width: '100px', height: '55px', zIndex: 50, backgroundColor: 'transparent' }} />
-
                   </Box>
                   
                   {cheatWarning && !isCurrentCompleted && (

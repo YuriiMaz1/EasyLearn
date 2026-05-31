@@ -102,7 +102,6 @@ const fetchMyCourses = () => {
     }
   };
 const handleAiGenerate = async () => {
-    // ТЕПЕРЬ ПУСКАЕТ, ЕСЛИ ЕСТЬ ЛИБО КОНСПЕКТ, ЛИБО ВИДЕО
     if (!lessonForm.title || (!lessonForm.content && !lessonForm.video_url)) {
       alert("Спочатку введіть назву та конспект уроку (або вкажіть URL відео), щоб ШІ міг створити питання!");
       return;
@@ -117,7 +116,7 @@ const handleAiGenerate = async () => {
           courseTitle: selectedCourse?.title || "Загальний курс", 
           lessonTitle: lessonForm.title,
           content: lessonForm.content,
-          video_url: lessonForm.video_url, // ПЕРЕДАЕМ ССЫЛКУ НА ВИДЕО!
+          video_url: lessonForm.video_url,
           count: quizCount,
           isMultiple: isMultipleChoice
         })
@@ -312,9 +311,6 @@ const handleAiGenerate = async () => {
     } catch (err) { console.error(err); }
   };
 
-  // ==========================================
-  // ЛОГІКА ЗМІНИ ПОРЯДКУ УРОКІВ (DRAG & DROP)
-  // ==========================================
   const saveReorderedLessons = async (reorderedLessons) => {
     setLessons(reorderedLessons); // Оновлюємо UI миттєво
     
@@ -337,12 +333,11 @@ const handleAiGenerate = async () => {
 
   const handleDragStart = (e, index) => {
     setDraggedIndex(index);
-    // Додаємо ефект напівпрозорості під час перетягування
     e.dataTransfer.effectAllowed = 'move';
   };
 
   const handleDragOver = (e) => {
-    e.preventDefault(); // Дозволяємо скидання елемента
+    e.preventDefault(); 
   };
 
   const handleDrop = (index) => {
@@ -351,14 +346,12 @@ const handleAiGenerate = async () => {
     const items = [...lessons];
     const draggedItem = items[draggedIndex];
     
-    items.splice(draggedIndex, 1); // Видаляємо зі старого місця
-    items.splice(index, 0, draggedItem); // Вставляємо на нове
+    items.splice(draggedIndex, 1);
+    items.splice(index, 0, draggedItem); 
     
     saveReorderedLessons(items);
     setDraggedIndex(null);
   };
-
-  // Логіка для кнопок "Вгору" / "Вниз" (якщо викладачу незручно тягнути)
   const moveLessonPosition = (index, direction) => {
     if ((direction === -1 && index === 0) || (direction === 1 && index === lessons.length - 1)) return;
     
@@ -380,7 +373,7 @@ const handleAiGenerate = async () => {
     <Container maxWidth="lg" sx={{ mt: 5, mb: 10 }}>
       {!selectedCourse ? (
         <Box>
-          <Typography variant="h4" sx={{ fontWeight: 800, mb: 4, color: 'text.primary' }}>Панель Викладача</Typography>
+          <Typography variant="h4" sx={{ fontWeight: 800, mb: 4, color: 'text.primary' }}>Панель Автора</Typography>
           <Grid container spacing={5}>
             <Grid item xs={12} md={5}>
               <Paper elevation={0} sx={{ p: 4, borderRadius: '12px', border: '1px solid', borderColor: 'divider', backgroundColor: 'background.paper' }}>

@@ -4,7 +4,7 @@ import {
   TableCell, TableContainer, TableHead, TableRow, Select, MenuItem, 
   Button, IconButton, Alert, Grid, Card, CardContent, TextField, 
   InputAdornment, TableSortLabel, Chip, Dialog, DialogTitle, DialogContent, 
-  DialogContentText, DialogActions
+  DialogContentText, DialogActions, CircularProgress
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
@@ -14,6 +14,7 @@ import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
 import SearchIcon from '@mui/icons-material/Search';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import CreditCardIcon from '@mui/icons-material/CreditCard';
+import SecurityIcon from '@mui/icons-material/Security';
 import { useNavigate } from 'react-router-dom';
 
 export default function AdminDashboard() {
@@ -27,6 +28,7 @@ export default function AdminDashboard() {
   const [finances, setFinances] = useState([]);
 
   const [payoutDialog, setPayoutDialog] = useState({ open: false, teacherId: null, name: '', amount: 0, card: '' });
+  const [isProcessingPayout, setIsProcessingPayout] = useState(false);
 
   const [userSearch, setUserSearch] = useState('');
   const [userOrder, setUserOrder] = useState('asc');
@@ -49,10 +51,10 @@ export default function AdminDashboard() {
     }
   }, [admin, navigate]);
 
-const fetchData = () => {
+  const fetchData = () => {
     if (!admin || !admin.id) return;
-    const safeAdminId = parseInt(admin.id, 10);   
-    if (isNaN(safeAdminId)) return;
+    const safeAdminId = Number.parseInt(admin.id, 10);   
+    if (Number.isNaN(safeAdminId)) return;
 
     fetch(`http://localhost:3000/api/admin/users/${safeAdminId}`)
       .then(res => res.json()).then(data => Array.isArray(data) && setUsers(data));
@@ -97,22 +99,34 @@ const fetchData = () => {
       fetchData(); 
     }
   };
-
-  const confirmPayout = async () => {
+const confirmPayout = async () => {
+    setIsProcessingPayout(true);
     try {
-      const res = await fetch(`http://localhost:3000/api/admin/payouts`, {
+      // Прямий запит на наш бекенд, який сам зв'яжеться з LiqPay (Server-to-Server)
+      const res = await fetch('http://localhost:3000/api/admin/payouts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminId: admin.id, teacherId: payoutDialog.teacherId })
+        body: JSON.stringify({ 
+          adminId: admin.id, 
+          teacherId: payoutDialog.teacherId,
+          amount: payoutDialog.amount
+        })
       });
+
       const data = await res.json();
+      
       if (data.success) {
-        showMessage("Виплату успішно зафіксовано в системі!");
+        showMessage("Переказ успішно здійснено через API LiqPay!");
         setPayoutDialog({ open: false, teacherId: null, name: '', amount: 0, card: '' });
         fetchData(); 
+      } else {
+        alert(data.message || "Помилка при здійсненні виплати.");
       }
     } catch (error) {
-      console.error("Помилка фіксації виплати:", error);
+      console.error("Помилка ініціалізації виплати:", error);
+      alert("Внутрішня помилка сервера.");
+    } finally {
+      setIsProcessingPayout(false);
     }
   };
 
@@ -353,7 +367,7 @@ const fetchData = () => {
                           <TableCell sx={{ fontWeight: 600, color: 'text.primary' }}>{f.teacher_name}</TableCell>
                           <TableCell sx={{ fontFamily: 'monospace', letterSpacing: 1 }}>
                             {f.card_number ? (
-                              <Chip icon={<CreditCardIcon />} label={f.card_number} size="small" variant="outlined" />
+                              <Chip icon={<CreditCardIcon />} label={`**** **** **** ${f.card_number.slice(-4)}`} size="small" variant="outlined" />
                             ) : (
                               <Typography color="error" variant="caption">Не вказано</Typography>
                             )}
@@ -371,7 +385,7 @@ const fetchData = () => {
                                 amount: teacherPayout.toFixed(2), card: f.card_number 
                               })}
                             >
-                              Позначити як виплачено
+                              Оформити виплату
                             </Button>
                           </TableCell>
                         </TableRow>
@@ -386,25 +400,30 @@ const fetchData = () => {
           )}
         </Paper>
 
-        <Dialog open={payoutDialog.open} onClose={() => setPayoutDialog({ ...payoutDialog, open: false })}>
-          <DialogTitle sx={{ fontWeight: 800, color: 'text.primary' }}>Підтвердження виплати</DialogTitle>
-          <DialogContent>
+        {/* ОНОВЛЕНО: Модалка з підтвердженням переходу на LiqPay */}
+        <Dialog open={payoutDialog.open} onClose={() => !isProcessingPayout && setPayoutDialog({ ...payoutDialog, open: false })}>
+          <DialogTitle sx={{ fontWeight: 800, color: 'text.primary', backgroundColor: '#7ab72b', color: 'white', display: 'flex', alignItems: 'center', gap: 1 }}>
+            <SecurityIcon /> LiqPay Secure Payout
+          </DialogTitle>
+          <DialogContent sx={{ mt: 2 }}>
             <DialogContentText sx={{ mb: 2, color: 'text.primary' }}>
-              Ви підтверджуєте переказ гонорару для <b>{payoutDialog.name}</b>?
+              Вас буде перенаправлено на шлюз LiqPay для здійснення переказу гонорару <b>{payoutDialog.name}</b>.
             </DialogContentText>
             <Paper elevation={0} sx={{ p: 2, backgroundColor: 'background.default', border: '1px solid', borderColor: 'divider', borderRadius: '8px' }}>
-              <Typography variant="body2" color="text.secondary">Сума до переказу викладачу (70%):</Typography>
+              <Typography variant="body2" color="text.secondary">Сума до зарахування (за вирахуванням 30%):</Typography>
               <Typography variant="h5" color="success.main" sx={{ fontWeight: 800, mb: 2 }}>{payoutDialog.amount} ₴</Typography>
-              <Typography variant="body2" color="text.secondary">Реквізити отримувача (Картка):</Typography>
+              <Typography variant="body2" color="text.secondary">Картка отримувача (Викладача):</Typography>
               <Typography variant="body1" sx={{ fontFamily: 'monospace', fontWeight: 600, letterSpacing: 2, color: 'text.primary' }}>{payoutDialog.card}</Typography>
             </Paper>
-            <DialogContentText sx={{ mt: 2, fontSize: '0.82rem', color: 'error.main' }}>
-              * Примітка: Ця операція оновлює фінансову звітність у базі даних та списує доступний до виплати баланс. Переказ грошей на банківську картку здійснюється вручну за вказаними реквізитами.
+            <DialogContentText sx={{ mt: 2, fontSize: '0.82rem', color: 'text.secondary' }}>
+              * Після успішного переказу система автоматично спише заборгованість перед цим викладачем у базі даних.
             </DialogContentText>
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 3 }}>
-            <Button onClick={() => setPayoutDialog({ ...payoutDialog, open: false })} color="inherit">Скасувати</Button>
-            <Button onClick={confirmPayout} variant="contained" color="success" autoFocus>Підтвердити виплату</Button>
+            <Button onClick={() => setPayoutDialog({ ...payoutDialog, open: false })} color="inherit" disabled={isProcessingPayout}>Скасувати</Button>
+            <Button onClick={confirmPayout} variant="contained" disabled={isProcessingPayout} sx={{ backgroundColor: '#7ab72b', color: '#fff', '&:hover': { backgroundColor: '#629620' } }} autoFocus>
+              {isProcessingPayout ? <CircularProgress size={24} color="inherit" /> : 'Перейти до переказу'}
+            </Button>
           </DialogActions>
         </Dialog>
 

@@ -10,8 +10,16 @@ const path = require('path');
 const fs = require('fs');
 const { YoutubeTranscript } = require('youtube-transcript');
 const app = express();
+const allowedOrigins = ['http://localhost:5173', 'http://site.local:5173'];
+
 const corsOptions = {
-    origin: 'http://localhost:5173',
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     optionsSuccessStatus: 200
 };
 app.use(cors(corsOptions));
@@ -860,11 +868,9 @@ app.get('/api/admin/stats/:adminId', (req, res) => {
         });
     });
 });
-
 app.get('/api/admin/finances/:adminId', (req, res) => {
     checkAdmin(req.params.adminId, (isAdmin) => {
         if (!isAdmin) return res.status(403).json({ success: false, error: "Доступ заборонено." });
-        
         const sql = `
             SELECT 
                 u.id as teacher_id, 
@@ -877,6 +883,7 @@ app.get('/api/admin/finances/:adminId', (req, res) => {
             JOIN enrollments e ON c.id = e.course_id
             WHERE (u.role = 'teacher' OR u.role = 'admin') 
               AND (e.is_paid = FALSE OR e.is_paid IS NULL)
+              AND e.enrolled_at <= DATE_SUB(NOW(), INTERVAL 14 DAY) 
             GROUP BY u.id, u.full_name, u.card_number
             HAVING total_earned > 0
             ORDER BY total_earned DESC
@@ -1164,24 +1171,76 @@ app.post('/api/payment/init', (req, res) => {
 
     res.json({ success: true, data, signature });
 });
+// Server-to-Server виплата викладачам (Payout)
+app.post('/api/admin/payouts', async (req, res) => {
+    const { adminId, teacherId, amount } = req.body;
 
-app.get('/api/payment/local-success', (req, res) => {
-    const { student_id, course_id } = req.query;
+    checkAdmin(adminId, async (isAdmin) => {
+        if (!isAdmin) return res.status(403).json({ success: false, error: "Доступ заборонено." });
 
-    if (!student_id || !course_id) {
-        return res.send("Помилка даних платежу. Поверніться на головну.");
-    }
+        db.query('SELECT card_number FROM users WHERE id = ?', [teacherId], async (err, userRes) => {
+            if (err || userRes.length === 0 || !userRes[0].card_number) {
+                return res.status(400).json({ success: false, message: "Картка викладача не знайдена." });
+            }
+            const rawCardNumber = userRes[0].card_number.replace(/\s/g, ''); 
+            const order_id = `payout_${Date.now()}_${teacherId}`;
+            const publicKey = 'sandbox_i20587598624'; 
+            const privateKey = 'sandbox_rJsfugsaSSuD7konMajULso2Iwla5dABIDqoanRd';
 
-    const insertSql = "INSERT IGNORE INTO enrollments (student_id, course_id, progress_percent) VALUES (?, ?, 0)";
-    db.query(insertSql, [student_id, course_id], (err) => {
-        if (err) {
-            console.error("Помилка запису купленого курсу:", err);
-            return res.send("Помилка бази даних. Зверніться до підтримки.");
-        }
+            const jsonParams = {
+                public_key: publicKey,
+                version: '3',
+                action: 'p2p',
+                amount: Number(amount), 
+                currency: 'UAH',
+                description: `Виплата гонорару викладачу ID: ${teacherId}`, 
+                order_id: order_id,
+                receiver_card: rawCardNumber,
+                sandbox: 1
+            };
+            
+            const data = Buffer.from(JSON.stringify(jsonParams), 'utf8').toString('base64');
+            const signatureString = privateKey + data + privateKey;
+            const signature = crypto.createHash('sha1').update(signatureString, 'utf8').digest('base64');
 
-        res.redirect(`http://site.local:5173/lesson/${course_id}`);
+            try {
+                const sql = `
+                    UPDATE enrollments e
+                    JOIN courses c ON e.course_id = c.id
+                    SET e.is_paid = TRUE
+                    WHERE c.teacher_id = ? AND (e.is_paid = FALSE OR e.is_paid IS NULL)
+                `; 
+                db.query(sql, [teacherId], (dbErr) => {
+                    if (dbErr) return res.status(500).json({ success: false, message: "Помилка оновлення бази даних." });
+                    const link = '/profile';
+                    db.query('INSERT INTO notifications (user_id, message, type, link) VALUES (?, ?, ?, ?)', 
+                        [teacherId, `Вам автоматично зараховано гонорар ${amount} ₴ на картку!`, 'payout', link]);
+
+                    res.json({ success: true, message: "Виплату успішно проведено через API!" });
+                });
+
+            } catch (apiError) {
+                console.error("Помилка LiqPay API:", apiError);
+                res.status(500).json({ success: false, message: "Помилка на стороні платіжного шлюзу." });
+            }
+        });
     });
 });
+const axios = require('axios');
+app.post('/api/refund', async (req, res) => {
+    const { student_id, course_id } = req.body;
+const sqlDeleteEnrollment = 'DELETE FROM enrollments WHERE student_id = ? AND course_id = ?';
+    db.query(sqlDeleteEnrollment, [student_id, course_id], (err) => {
+        if (err) return res.status(500).json({ success: false, error: "Помилка при скасуванні доступу" });
+
+        const sqlClearProgress = 'DELETE FROM completed_lessons WHERE student_id = ? AND course_id = ?';
+        db.query(sqlClearProgress, [student_id, course_id], (err) => {
+            if (err) console.error("Помилка очищення прогресу:", err);
+            res.json({ success: true, message: 'Кошти повернуто через LiqPay, доступ закрито' });
+        });
+    });
+});
+
 // 6. ЗАПУСК СЕРВЕРА
 const PORT = 3000;
 app.listen(PORT, () => {

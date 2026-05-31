@@ -1,0 +1,42 @@
+name: easylearn
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: easylearn_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: easylearn
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+    ports:
+      - "3307:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+
+  backend:
+    build: . 
+    container_name: easylearn_backend
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - DB_HOST=db
+      - DB_USER=user
+      - DB_PASSWORD=password
+      - DB_NAME=easylearn
+    depends_on:
+      - db
+
+  frontend:
+    build: ./elearning-frontend 
+    container_name: easylearn_frontend
+    restart: always
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+volumes:
+  db_data:
